@@ -255,10 +255,6 @@ const Index = () => {
 
                 <div className="flex items-center gap-3 pt-2">
                   <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Compute & Save"}</Button>
-                  <Button type="button" variant="secondary" onClick={setDemo}>Fill demo</Button>
-                  <Button asChild variant="outline">
-                    <a href="/patients">View patients</a>
-                  </Button>
                 </div>
               </form>
             </CardContent>
