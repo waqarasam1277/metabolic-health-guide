@@ -139,7 +139,20 @@ const Index = () => {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(withId),
+        body: JSON.stringify({
+          Name: record.full_name,
+          Age: record.age,
+          Gender: record.gender,
+          Weight: record.weight_kg,
+          Height: record.height_m,
+          Glucose: record.fasting_glucose,
+          TG: record.triglycerides,
+          HDL: record.hdl,
+          BMI: record.bmi,
+          TyG: record.tyg,
+          "TG/HDL": record.tg_hdl_ratio,
+          Risk: record.risk_zone,
+        }),
         mode: "no-cors",
       });
       toast("Submitted to Google Sheets", { description: "Entry sent to shared sheet." });
