@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { computeBMI, computeTgHdl, computeTyG, getRiskZone, type RiskZone } from "@/lib/calculations";
 import { generateAdvice, type Advice } from "@/lib/advice";
-
+import RiskBadge from "@/components/RiskBadge";
+import ReferencesBox from "@/components/ReferencesBox";
+import html2pdf from "html2pdf.js";
 
 const schema = z.object({
   fullName: z.string().min(2, "Enter full name"),
@@ -50,10 +52,31 @@ type AssessmentRecord = {
 };
 
 const STORAGE_KEY = "metabolic_assessments";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTndqJeDGN3G3mtKEShhytee0aDtF9f3o0V4Bm6WeuYUvGxT5d9vj-EAE5yj7liYPY/exec";
 
 const Index = () => {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<AssessmentRecord | null>(null);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+
+  const handleDownloadPdf = () => {
+    if (!result || !resultRef.current) return;
+    const safeName = result.full_name.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `${safeName || "Patient"}_${dateStr}.pdf`;
+
+    // @ts-ignore - html2pdf types provided via ambient module
+    html2pdf()
+      .set({
+        margin: 10,
+        filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      })
+      .from(resultRef.current)
+      .save();
+  };
 
   const {
     register,
@@ -75,9 +98,9 @@ const Index = () => {
   }, [values.height, values.weight, values.fastingGlucose, values.triglycerides, values.hdl]);
 
   useEffect(() => {
-    document.title = "Metabolic Risk Calculator";
+    document.title = "Metabolic Disorder Risk Calculator";
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Assess diabetes and metabolic risk with BMI, TyG index and TG/HDL ratio.");
+    if (meta) meta.setAttribute("content", "Assess metabolic disorder risk with BMI, TyG index and TG/HDL ratio. Download PDF and auto-save to Google Sheets.");
   }, []);
 
   const onSubmit = async (data: FormValues) => {
@@ -111,8 +134,20 @@ const Index = () => {
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     const withId = { ...record, id: crypto.randomUUID(), created_at: new Date().toISOString() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify([withId, ...existing]));
+
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(withId),
+        mode: "no-cors",
+      });
+      toast("Submitted to Google Sheets", { description: "Entry sent to shared sheet." });
+    } catch (e) {
+      toast("Saved locally", { description: "Could not contact Google Sheets." });
+    }
+
     setResult(withId);
-    toast("Saved locally", { description: "Connect Supabase to store assessments securely." });
     setSaving(false);
     reset();
   };
@@ -133,7 +168,7 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/40">
       <section className="container py-10">
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-2">Metabolic Risk Calculator</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-2">Metabolic Disorder Risk Calculator</h1>
         <p className="text-muted-foreground mb-6">Enter patient data to compute BMI, TyG index and TG/HDL-C ratio, then save results.</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -240,7 +275,10 @@ const Index = () => {
                     <Metric label="BMI" value={live.bmi.toFixed(1)} />
                     <Metric label="TyG index" value={live.tyg.toFixed(2)} />
                     <Metric label="TG/HDL-C" value={live.ratio.toFixed(2)} />
-                    <Metric label="Risk" value={live.risk} />
+                    <div className="rounded-md border p-4 bg-card/50">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">Risk</div>
+                      <div className="text-xl font-semibold"><RiskBadge risk={live.risk} /></div>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">TyG risk thresholds: Low &lt; 8.0 • Moderate 8.0–8.5 • High &gt; 8.5</p>
                 </div>
@@ -249,10 +287,44 @@ const Index = () => {
               )}
 
               {result && (
-                <div className="mt-6 space-y-4">
+                <div ref={resultRef} className="mt-6 space-y-4">
                   <Separator />
-                  <h3 className="font-medium">Summary</h3>
-                  <p className="text-sm leading-relaxed">{result.summary}</p>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Results Summary</h3>
+                    <Button type="button" variant="outline" onClick={handleDownloadPdf}>Download PDF</Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Metric label="BMI" value={result.bmi.toFixed(1)} />
+                    <Metric label="TyG index" value={result.tyg.toFixed(2)} />
+                    <Metric label="TG/HDL-C" value={result.tg_hdl_ratio.toFixed(2)} />
+                    <div className="rounded-md border p-4 bg-card/50">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">Risk</div>
+                      <div className="mt-1"><RiskBadge risk={result.risk_zone} /></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Patient Details</h4>
+                    <ul className="text-sm grid grid-cols-2 gap-x-6 gap-y-1">
+                      <li><strong>Name:</strong> {result.full_name}</li>
+                      <li><strong>Age:</strong> {result.age}</li>
+                      <li><strong>Gender:</strong> {result.gender}</li>
+                      <li><strong>Diagnosis:</strong> {result.diabetes_diagnosis}</li>
+                      <li><strong>Weight (kg):</strong> {result.weight_kg}</li>
+                      <li><strong>Height (m):</strong> {result.height_m}</li>
+                      <li><strong>Fasting Glucose:</strong> {result.fasting_glucose}</li>
+                      <li><strong>Triglycerides:</strong> {result.triglycerides}</li>
+                      <li><strong>HDL:</strong> {result.hdl}</li>
+                      <li><strong>HbA1c:</strong> {result.hba1c}%</li>
+                      <li><strong>Date:</strong> {new Date(result.created_at || "").toLocaleString()}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-1">Summary</h4>
+                    <p className="text-sm leading-relaxed">{result.summary}</p>
+                  </div>
                   <div>
                     <h4 className="font-medium mb-2">Personalized Advice</h4>
                     <ul className="text-sm list-disc pl-5 space-y-1">
@@ -261,6 +333,8 @@ const Index = () => {
                       <li><strong>Monitoring:</strong> {result.advice.monitoring}</li>
                     </ul>
                   </div>
+
+                  <ReferencesBox />
                 </div>
               )}
             </CardContent>
