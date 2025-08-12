@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Header from "./components/Header";
 import Patients from "./pages/Patients";
+import Footer from "./components/Footer";
 
 const App = () => (
   <TooltipProvider>
@@ -20,6 +21,7 @@ const App = () => (
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Footer />
     </BrowserRouter>
   </TooltipProvider>
 );

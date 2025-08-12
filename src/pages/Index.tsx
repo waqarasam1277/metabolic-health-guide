@@ -15,7 +15,6 @@ import RiskBadge from "@/components/RiskBadge";
 import ReferencesBox from "@/components/ReferencesBox";
 import html2pdf from "html2pdf.js";
 import RangeGauge from "@/components/RangeGauge";
-import ReferenceValues from "@/components/ReferenceValues";
 
 const schema = z.object({
   fullName: z.string().min(2, "Enter full name"),
@@ -300,7 +299,6 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <ReferenceValues />
                 </div>
               ) : (
                 <p className="text-muted-foreground">Enter values to preview results.</p>
@@ -311,7 +309,7 @@ const Index = () => {
                   <Separator />
                   <div className="flex items-center justify-between">
                     <h3 className="font-medium">Results Summary</h3>
-                    <Button type="button" variant="outline" onClick={handleDownloadPdf}>Download PDF</Button>
+                    <Button type="button" variant="outline" onClick={handleDownloadPdf}>Download Patient PDF</Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -332,7 +330,7 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <ReferenceValues />
+                  
 
                   <div>
                     <h4 className="font-medium mb-2">Patient Details</h4>
