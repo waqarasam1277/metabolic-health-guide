@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import { generateAdvice, type Advice } from "@/lib/advice";
 import RiskBadge from "@/components/RiskBadge";
 import ReferencesBox from "@/components/ReferencesBox";
 import html2pdf from "html2pdf.js";
+import RangeGauge from "@/components/RangeGauge";
+import ReferenceValues from "@/components/ReferenceValues";
 
 const schema = z.object({
   fullName: z.string().min(2, "Enter full name"),
@@ -281,15 +283,24 @@ const Index = () => {
               {live ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Metric label="BMI" value={live.bmi.toFixed(1)} />
-                    <Metric label="TyG index" value={live.tyg.toFixed(2)} />
-                    <Metric label="TG/HDL-C" value={live.ratio.toFixed(2)} />
+                    <Metric label="BMI" value={live.bmi.toFixed(1)}>
+                      <RangeGauge preset="bmi" value={live.bmi} />
+                    </Metric>
+                    <Metric label="TyG index" value={live.tyg.toFixed(2)}>
+                      <RangeGauge preset="tyg" value={live.tyg} />
+                    </Metric>
+                    <Metric label="TG/HDL-C" value={live.ratio.toFixed(2)}>
+                      <RangeGauge preset="tgratio" value={live.ratio} />
+                    </Metric>
                     <div className="rounded-md border p-4 bg-card/50">
                       <div className="text-xs uppercase tracking-wide text-muted-foreground">Risk</div>
                       <div className="text-xl font-semibold"><RiskBadge risk={live.risk} /></div>
+                      <div className="mt-2">
+                        <RangeGauge preset="tyg" value={live.tyg} />
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">TyG risk thresholds: Low &lt; 8.0 • Moderate 8.0–8.5 • High &gt; 8.5</p>
+                  <ReferenceValues />
                 </div>
               ) : (
                 <p className="text-muted-foreground">Enter values to preview results.</p>
@@ -304,14 +315,24 @@ const Index = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Metric label="BMI" value={result.bmi.toFixed(1)} />
-                    <Metric label="TyG index" value={result.tyg.toFixed(2)} />
-                    <Metric label="TG/HDL-C" value={result.tg_hdl_ratio.toFixed(2)} />
+                    <Metric label="BMI" value={result.bmi.toFixed(1)}>
+                      <RangeGauge preset="bmi" value={result.bmi} />
+                    </Metric>
+                    <Metric label="TyG index" value={result.tyg.toFixed(2)}>
+                      <RangeGauge preset="tyg" value={result.tyg} />
+                    </Metric>
+                    <Metric label="TG/HDL-C" value={result.tg_hdl_ratio.toFixed(2)}>
+                      <RangeGauge preset="tgratio" value={result.tg_hdl_ratio} />
+                    </Metric>
                     <div className="rounded-md border p-4 bg-card/50">
                       <div className="text-xs uppercase tracking-wide text-muted-foreground">Risk</div>
                       <div className="mt-1"><RiskBadge risk={result.risk_zone} /></div>
+                      <div className="mt-2">
+                        <RangeGauge preset="tyg" value={result.tyg} />
+                      </div>
                     </div>
                   </div>
+                  <ReferenceValues />
 
                   <div>
                     <h4 className="font-medium mb-2">Patient Details</h4>
@@ -354,10 +375,11 @@ const Index = () => {
   );
 };
 
-const Metric = ({ label, value }: { label: string; value: string | number }) => (
+const Metric = ({ label, value, children }: { label: string; value: string | number; children?: ReactNode }) => (
   <div className="rounded-md border p-4 bg-card/50">
     <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
     <div className="text-xl font-semibold">{value}</div>
+    {children && <div className="mt-2">{children}</div>}
   </div>
 );
 
