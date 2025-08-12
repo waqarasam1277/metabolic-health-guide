@@ -15,7 +15,7 @@ import RiskBadge from "@/components/RiskBadge";
 import ReferencesBox from "@/components/ReferencesBox";
 import html2pdf from "html2pdf.js";
 import RangeGauge from "@/components/RangeGauge";
-
+import { Scale, FlaskConical, Droplets, type LucideIcon } from "lucide-react";
 const schema = z.object({
   fullName: z.string().min(2, "Enter full name"),
   age: z.coerce.number().int().min(0).max(120),
@@ -141,18 +141,18 @@ const Index = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          Name: record.full_name,
-          Age: record.age,
-          Gender: record.gender,
-          Weight: record.weight_kg,
-          Height: record.height_m,
-          Glucose: record.fasting_glucose,
-          TG: record.triglycerides,
-          HDL: record.hdl,
-          BMI: record.bmi,
-          TyG: record.tyg,
-          "TG/HDL": record.tg_hdl_ratio,
-          Risk: record.risk_zone,
+          name: record.full_name,
+          age: record.age,
+          gender: record.gender,
+          weight: record.weight_kg,
+          height: record.height_m,
+          glucose: record.fasting_glucose,
+          triglycerides: record.triglycerides,
+          hdl: record.hdl,
+          bmi: record.bmi,
+          tyg: record.tyg,
+          tghdl: record.tg_hdl_ratio,
+          risk: record.risk_zone,
         }),
         mode: "no-cors",
       });
@@ -282,13 +282,13 @@ const Index = () => {
               {live ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Metric label="BMI" value={live.bmi.toFixed(1)}>
+                    <Metric label="BMI" value={live.bmi.toFixed(1)} icon={Scale} tone="success">
                       <RangeGauge preset="bmi" value={live.bmi} />
                     </Metric>
-                    <Metric label="TyG index" value={live.tyg.toFixed(2)}>
+                    <Metric label="TyG index" value={live.tyg.toFixed(2)} icon={FlaskConical} tone="warning">
                       <RangeGauge preset="tyg" value={live.tyg} />
                     </Metric>
-                    <Metric label="TG/HDL-C" value={live.ratio.toFixed(2)}>
+                    <Metric label="TG/HDL-C" value={live.ratio.toFixed(2)} icon={Droplets} tone="accent">
                       <RangeGauge preset="tgratio" value={live.ratio} />
                     </Metric>
                     <div className="rounded-md border p-4 bg-card/50">
@@ -313,13 +313,13 @@ const Index = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Metric label="BMI" value={result.bmi.toFixed(1)}>
+                    <Metric label="BMI" value={result.bmi.toFixed(1)} icon={Scale} tone="success">
                       <RangeGauge preset="bmi" value={result.bmi} />
                     </Metric>
-                    <Metric label="TyG index" value={result.tyg.toFixed(2)}>
+                    <Metric label="TyG index" value={result.tyg.toFixed(2)} icon={FlaskConical} tone="warning">
                       <RangeGauge preset="tyg" value={result.tyg} />
                     </Metric>
-                    <Metric label="TG/HDL-C" value={result.tg_hdl_ratio.toFixed(2)}>
+                    <Metric label="TG/HDL-C" value={result.tg_hdl_ratio.toFixed(2)} icon={Droplets} tone="accent">
                       <RangeGauge preset="tgratio" value={result.tg_hdl_ratio} />
                     </Metric>
                     <div className="rounded-md border p-4 bg-card/50">
@@ -373,12 +373,36 @@ const Index = () => {
   );
 };
 
-const Metric = ({ label, value, children }: { label: string; value: string | number; children?: ReactNode }) => (
-  <div className="rounded-md border p-4 bg-card/50">
-    <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-    <div className="text-xl font-semibold">{value}</div>
-    {children && <div className="mt-2">{children}</div>}
-  </div>
-);
+const Metric = ({ label, value, children, icon: Icon, tone = "primary" }: {
+  label: string;
+  value: string | number;
+  children?: ReactNode;
+  icon?: LucideIcon;
+  tone?: "primary" | "accent" | "success" | "warning" | "destructive";
+}) => {
+  const toneStyles: Record<string, string> = {
+    primary: "bg-primary/10 text-primary border-primary/20",
+    accent: "bg-accent/10 text-accent border-accent/20",
+    success: "bg-success/10 text-success border-success/20",
+    warning: "bg-warning/10 text-warning border-warning/20",
+    destructive: "bg-destructive/10 text-destructive border-destructive/20",
+  };
 
+  return (
+    <div className="rounded-lg border p-4 bg-card/60 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {Icon && (
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${toneStyles[tone]}`} aria-hidden>
+              <Icon className="h-4 w-4" />
+            </span>
+          )}
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+        </div>
+        <div className="text-xl font-semibold">{value}</div>
+      </div>
+      {children && <div className="mt-3">{children}</div>}
+    </div>
+  );
+};
 export default Index;

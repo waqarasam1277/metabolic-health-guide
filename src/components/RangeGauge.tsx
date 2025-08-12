@@ -56,8 +56,15 @@ export default function RangeGauge({ preset, value }: { preset: Preset; value: n
   const toPct = (v: number) => ((v - cfg.min) / (cfg.max - cfg.min)) * 100;
 
   return (
-    <div className="w-full" aria-label={`${preset} gauge`} role="meter" aria-valuemin={cfg.min} aria-valuemax={cfg.max} aria-valuenow={clamped}>
-      <div className="relative h-2 w-full rounded bg-muted overflow-hidden">
+    <div
+      className="w-full"
+      aria-label={`${preset} gauge`}
+      role="meter"
+      aria-valuemin={cfg.min}
+      aria-valuemax={cfg.max}
+      aria-valuenow={clamped}
+    >
+      <div className="relative h-3 w-full rounded-full bg-muted overflow-hidden ring-1 ring-border">
         {cfg.bands.map((b, i) => {
           const left = toPct(b.from);
           const width = toPct(b.to) - toPct(b.from);
@@ -69,9 +76,15 @@ export default function RangeGauge({ preset, value }: { preset: Preset; value: n
             />
           );
         })}
-        {/* Pointer */}
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={`tick-${i}`}
+            className="absolute top-0 h-full w-px bg-border/80"
+            style={{ left: `${(i / 5) * 100}%` }}
+          />
+        ))}
         <div
-          className="absolute -top-1 h-4 w-0.5 bg-[hsl(var(--ring))] shadow-sm"
+          className="absolute -top-1 h-5 w-0.5 bg-[hsl(var(--ring))] shadow-sm transition-all duration-300"
           style={{ left: `${toPct(clamped)}%`, transform: "translateX(-50%)" }}
         />
       </div>
